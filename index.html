@@ -3,331 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo de Reservas - Cancha Sintética</title>
+    <title>Reserva de Espacios - Próximos 5 Días</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --azul-marino: #002D72;
             --azul-claro: #0056b3;
-            --gris-fondo: #f4f7f9;
-            --gris-borde: #dee2e6;
+            --gris-fondo: #f0f2f5;
             --verde-libre: #28a745;
             --rojo-ocupado: #dc3545;
-            --texto-oscuro: #333;
+            --blanco: #ffffff;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--gris-fondo);
-            margin: 0;
-            padding: 20px;
-            color: var(--texto-oscuro);
+            color: #333;
+            line-height: 1.6;
         }
 
-        .main-container {
-            max-width: 1100px;
+        .container {
+            width: 100%;
+            max-width: 600px; /* Optimizado para lectura vertical/móvil */
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            overflow: hidden;
+            background: var(--blanco);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Cabecera */
         .header {
-            background-color: white;
-            text-align: center;
+            background-color: var(--azul-marino);
+            color: white;
             padding: 20px;
-            border-bottom: 2px solid var(--gris-fondo);
-        }
-
-        .header h1 {
-            color: var(--azul-marino);
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .header p {
-            color: #666;
-            margin: 5px 0 0;
-        }
-
-        /* Layout de dos columnas */
-        .booking-wrapper {
-            display: flex;
-            gap: 2px;
-            background-color: var(--gris-borde); /* Simula línea divisoria */
-        }
-
-        .panel {
-            flex: 1;
-            padding: 25px;
-            background: white;
-            min-height: 500px;
-        }
-
-        h3 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: var(--azul-claro);
             text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
+        .header h1 { font-size: 1.2rem; margin-bottom: 5px; }
+        .header p { font-size: 0.9rem; opacity: 0.9; }
 
-        /* Estilos Calendario */
-        .calendar-header {
+        /* Selector de 5 Días (Horizontal) */
+        .day-selector {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #fff;
+            overflow-x: auto; /* Scroll horizontal en móviles pequeños */
+            border-bottom: 1px solid #ddd;
+            scrollbar-width: none;
+        }
+        .day-selector::-webkit-scrollbar { display: none; }
+
+        .day-card {
+            flex: 0 0 calc(20% - 8px); /* 5 días exactos */
+            min-width: 70px;
+            padding: 10px 5px;
+            text-align: center;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            background: #f8f9fa;
+        }
+        .day-card.active {
+            background: var(--azul-marino);
+            color: white;
+            border-color: var(--azul-marino);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .day-card .name { font-size: 0.7rem; text-transform: uppercase; display: block; }
+        .day-card .number { font-size: 1.2rem; font-weight: bold; display: block; }
+
+        /* Contenedor de Horas */
+        .hours-container {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--azul-claro);
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-        }
-
-        .day-label {
-            text-align: center;
-            font-weight: bold;
-            font-size: 14px;
-            padding-bottom: 10px;
-        }
-
-        .day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            border: 1px solid #eee;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            font-size: 14px;
-        }
-
-        .day:hover:not(.empty) {
-            background-color: #e7f1ff;
-            border-color: var(--azul-claro);
-        }
-
-        .day.selected {
-            background-color: var(--azul-marino) !important;
-            color: white;
-            font-weight: bold;
-        }
-
-        .day.full {
-            background-color: #f1f1f1;
-            color: #bbb;
-            cursor: not-allowed;
-        }
-
-        .day.full i {
-            position: absolute;
-            font-size: 10px;
-            bottom: 4px;
-            right: 4px;
-        }
-
-        .day.empty { border: none; cursor: default; }
-
-        .legend {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 25px;
-            font-size: 12px;
-        }
-
-        .legend-item { display: flex; align-items: center; gap: 5px; }
-        .dot { width: 12px; height: 12px; border-radius: 3px; }
-
-        /* Estilos Franjas Horarias */
-        .slots-list {
-            max-height: 380px;
-            overflow-y: auto;
-            padding-right: 5px;
         }
 
         .slot {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            border: 1px solid var(--gris-borde);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
             cursor: pointer;
             transition: 0.2s;
         }
-
-        .slot.free { border-left: 5px solid var(--verde-libre); }
-        .slot.free:hover { background-color: #f8fff9; }
-        .slot.free.selected { 
-            background-color: var(--azul-marino); 
-            color: white; 
-            border-left-color: var(--azul-claro);
-        }
-
+        
+        /* Estados de franjas */
+        .slot.available { border-left: 6px solid var(--verde-libre); }
+        .slot.available:active { background: #f0fff4; }
+        
         .slot.occupied {
-            background-color: #f9f9f9;
+            background: #f5f5f5;
             color: #999;
-            border-left: 5px solid #ccc;
+            border-left: 6px solid #ccc;
             cursor: not-allowed;
         }
 
-        .slot-status { font-size: 12px; font-weight: bold; }
+        .slot.selected {
+            background: var(--azul-marino) !important;
+            color: white !important;
+            border-color: var(--azul-marino);
+        }
 
-        /* Footer de Acción */
-        .booking-footer {
+        .slot-time { font-weight: bold; font-size: 1rem; }
+        .slot-status { font-size: 0.8rem; font-weight: 600; }
+
+        /* Footer Fijo */
+        .footer {
             padding: 20px;
-            border-top: 1px solid var(--gris-borde);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fafafa;
+            background: white;
+            border-top: 1px solid #ddd;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
-
-        .summary-info { font-size: 13px; color: #555; }
-        .summary-info strong { color: var(--azul-marino); }
-
-        .btn-group { display: flex; gap: 10px; }
-
-        button {
-            padding: 10px 22px;
-            border-radius: 6px;
+        .btn-confirm {
+            width: 100%;
+            padding: 15px;
+            background: var(--azul-marino);
+            color: white;
             border: none;
-            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1rem;
             font-weight: bold;
-            transition: 0.2s;
+            cursor: pointer;
         }
+        .btn-confirm:disabled { background: #ccc; }
 
-        .btn-clear { background: #eee; color: #555; }
-        .btn-clear:hover { background: #ddd; }
-        
-        .btn-save { background: var(--azul-marino); color: white; }
-        .btn-save:hover { background: var(--azul-claro); }
+        .summary-text { font-size: 0.85rem; margin-bottom: 10px; text-align: center; }
 
+        /* Desktop Adjustment */
+        @media (min-width: 768px) {
+            body { padding: 40px 0; }
+            .container { 
+                border-radius: 15px; 
+                min-height: auto; 
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <!-- Título Superior -->
-        <div class="header">
-            <h1>Módulo de Reservas: Cancha Sintética</h1>
-            <p>Calendario de Disponibilidad</p>
+<div class="container">
+    <div class="header">
+        <h1>Reserva de Cancha Sintética</h1>
+        <p>Selecciona día y hora (Próximos 5 días)</p>
+    </div>
+
+    <!-- Selector de Días -->
+    <div class="day-selector" id="day-selector">
+        <!-- Generado por JS -->
+    </div>
+
+    <!-- Lista de Horarios -->
+    <div class="hours-container">
+        <div class="section-title">
+            <span id="display-date">Hoy</span>
+            <small>Hasta las 8:00 PM</small>
         </div>
-
-        <div class="booking-wrapper">
-            <!-- Panel Izquierdo: Calendario -->
-            <div class="panel">
-                <h3>Selecciona una Fecha</h3>
-                <div class="calendar-header">
-                    <span><i class="fas fa-chevron-left"></i></span>
-                    <span>Octubre 2023</span>
-                    <span><i class="fas fa-chevron-right"></i></span>
-                </div>
-                
-                <div class="calendar-grid">
-                    <div class="day-label">L</div><div class="day-label">M</div><div class="day-label">X</div>
-                    <div class="day-label">J</div><div class="day-label">V</div><div class="day-label">S</div>
-                    <div class="day-label">D</div>
-                    
-                    <!-- Días vacíos mes anterior -->
-                    <div class="day empty"></div><div class="day empty"></div><div class="day empty"></div><div class="day empty"></div><div class="day empty"></div>
-                    
-                    <!-- Días del mes -->
-                    <div class="day full">1 <i class="fas fa-lock"></i></div>
-                    <div class="day">2</div><div class="day">3</div><div class="day">4</div>
-                    <div class="day selected" onclick="selectDay(this, 5)">5</div>
-                    <div class="day">6</div><div class="day">7</div><div class="day">8</div>
-                    <div class="day">9</div><div class="day">10</div><div class="day">11</div>
-                    <div class="day">12</div><div class="day">13</div><div class="day">14</div>
-                    <div class="day full">15 <i class="fas fa-lock"></i></div>
-                    <!-- ... otros días -->
-                </div>
-
-                <div class="legend">
-                    <div class="legend-item"><span class="dot" style="background:#f1f1f1"></span> Completo</div>
-                    <div class="legend-item"><span class="dot" style="background:var(--verde-libre)"></span> Libre</div>
-                    <div class="legend-item"><span class="dot" style="background:var(--azul-marino)"></span> Seleccionado</div>
-                </div>
-            </div>
-
-            <!-- Panel Derecho: Horarios -->
-            <div class="panel">
-                <h3 id="selected-date-title">Horarios para: Jueves, 05 Oct</h3>
-                
-                <div class="slots-list">
-                    <div class="slot occupied">
-                        <span>08:00 - 09:00</span>
-                        <span class="slot-status">OCUPADO <i class="fas fa-lock"></i></span>
-                    </div>
-                    <div class="slot free selected" onclick="selectSlot(this, '09:00 - 10:00')">
-                        <span>09:00 - 10:00</span>
-                        <span class="slot-status">LIBRE <i class="fas fa-check-circle"></i></span>
-                    </div>
-                    <div class="slot free" onclick="selectSlot(this, '10:00 - 11:00')">
-                        <span>10:00 - 11:00</span>
-                        <span class="slot-status">LIBRE <i class="fas fa-check-circle"></i></span>
-                    </div>
-                    <div class="slot occupied">
-                        <span>11:00 - 12:00</span>
-                        <span class="slot-status">MANTENIMIENTO <i class="fas fa-tools"></i></span>
-                    </div>
-                    <div class="slot free" onclick="selectSlot(this, '12:00 - 13:00')">
-                        <span>12:00 - 13:00</span>
-                        <span class="slot-status">LIBRE <i class="fas fa-check-circle"></i></span>
-                    </div>
-                    <div class="slot free" onclick="selectSlot(this, '13:00 - 14:00')">
-                        <span>13:00 - 14:00</span>
-                        <span class="slot-status">LIBRE <i class="fas fa-check-circle"></i></span>
-                    </div>
-                    <div class="slot occupied">
-                        <span>14:00 - 15:00</span>
-                        <span class="slot-status">ENTRENO <i class="fas fa-users"></i></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer Resumen -->
-        <div class="booking-footer">
-            <div class="summary-info" id="summary">
-                Resumen de Reserva: <br>
-                <strong>Instalación:</strong> Cancha Sintética | <strong>Fecha:</strong> 05/10/2023 | <strong>Hora:</strong> <span id="res-time">09:00 - 10:00</span>
-            </div>
-            <div class="btn-group">
-                <button class="btn-clear">Limpiar</button>
-                <button class="btn-save">Confirmar Reserva</button>
-            </div>
+        <div id="slots-list">
+            <!-- Generado por JS -->
         </div>
     </div>
 
-    <script>
-        function selectDay(element, day) {
-            // Quitar clase seleccionada de otros días
-            document.querySelectorAll('.day').forEach(d => d.classList.remove('selected'));
-            // Añadir al actual
-            element.classList.add('selected');
-            // Actualizar título
-            document.getElementById('selected-date-title').innerText = `Horarios para: Jueves, 0${day} Oct`;
-        }
+    <!-- Resumen y Confirmación -->
+    <div class="footer">
+        <div class="summary-text" id="summary-text">
+            Por favor, selecciona una franja horaria.
+        </div>
+        <button class="btn-confirm" id="btn-confirm" disabled>CONFIRMAR RESERVA</button>
+    </div>
+</div>
 
-        function selectSlot(element, time) {
-            // Solo si no está ocupado
-            if(element.classList.contains('occupied')) return;
+<script>
+    const daySelector = document.getElementById('day-selector');
+    const slotsList = document.getElementById('slots-list');
+    const displayDate = document.getElementById('display-date');
+    const summaryText = document.getElementById('summary-text');
+    const btnConfirm = document.getElementById('btn-confirm');
 
-            document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
-            element.classList.add('selected');
+    let selectedDate = null;
+    let selectedSlot = null;
+
+    const daysNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const monthsNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    // 1. Generar los próximos 5 días
+    function generateDays() {
+        for (let i = 0; i < 5; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
             
-            // Actualizar resumen
-            document.getElementById('res-time').innerText = time;
+            const card = document.createElement('div');
+            card.className = `day-card ${i === 0 ? 'active' : ''}`;
+            if(i === 0) selectedDate = d.toLocaleDateString();
+
+            card.innerHTML = `
+                <span class="name">${daysNames[d.getDay()]}</span>
+                <span class="number">${d.getDate()}</span>
+            `;
+
+            card.onclick = () => {
+                document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                selectedDate = d.toLocaleDateString();
+                selectedSlot = null;
+                updateView(d);
+            };
+            daySelector.appendChild(card);
         }
-    </script>
+    }
+
+    // 2. Generar franjas horarias hasta las 8 PM
+    function updateView(dateObj) {
+        displayDate.innerText = `${daysNames[dateObj.getDay()]} ${dateObj.getDate()} de ${monthsNames[dateObj.getMonth()]}`;
+        slotsList.innerHTML = '';
+        btnConfirm.disabled = true;
+        summaryText.innerText = "Selecciona una franja horaria.";
+
+        // De 7:00 a 20:00 (8 PM)
+        for (let h = 7; h < 20; h++) {
+            const timeRange = `${h.toString().padStart(2, '0')}:00 - ${(h+1).toString().padStart(2, '0')}:00`;
+            
+            // Simulación de ocupados aleatorios para el ejemplo
+            const isOccupied = Math.random() < 0.25; 
+
+            const slotDiv = document.createElement('div');
+            slotDiv.className = `slot ${isOccupied ? 'occupied' : 'available'}`;
+            
+            slotDiv.innerHTML = `
+                <span class="slot-time">${timeRange}</span>
+                <span class="slot-status">${isOccupied ? 'OCUPADO <i class="fas fa-lock"></i>' : 'LIBRE <i class="fas fa-check"></i>'}</span>
+            `;
+
+            if (!isOccupied) {
+                slotDiv.onclick = () => {
+                    document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+                    slotDiv.classList.add('selected');
+                    selectedSlot = timeRange;
+                    summaryText.innerHTML = `Reserva para el <strong>${dateObj.getDate()}/${dateObj.getMonth()+1}</strong> a las <strong>${timeRange}</strong>`;
+                    btnConfirm.disabled = false;
+                };
+            }
+            slotsList.appendChild(slotDiv);
+        }
+    }
+
+    // Inicializar
+    generateDays();
+    updateView(new Date());
+</script>
+
 </body>
 </html>
