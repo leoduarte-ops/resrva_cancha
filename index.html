@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva de Espacios - Próximos 5 Días</title>
+    <title>Reserva de Espacios - Calendario Completo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --azul-marino: #002D72;
             --azul-claro: #0056b3;
-            --gris-fondo: #f0f2f5;
+            --gris-fondo: #f4f7f9;
+            --gris-borde: #dee2e6;
             --verde-libre: #28a745;
             --rojo-ocupado: #dc3545;
             --blanco: #ffffff;
@@ -18,18 +19,19 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--gris-fondo);
             color: #333;
-            line-height: 1.6;
+            padding: 10px;
         }
 
-        .container {
-            width: 100%;
-            max-width: 600px; /* Optimizado para lectura vertical/móvil */
+        .main-container {
+            max-width: 1000px;
             margin: 0 auto;
             background: var(--blanco);
-            min-height: 100vh;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
@@ -40,234 +42,268 @@
             color: white;
             padding: 20px;
             text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
-        .header h1 { font-size: 1.2rem; margin-bottom: 5px; }
-        .header p { font-size: 0.9rem; opacity: 0.9; }
 
-        /* Selector de 5 Días (Horizontal) */
-        .day-selector {
+        /* Layout Responsivo */
+        .content-wrapper {
             display: flex;
-            gap: 10px;
-            padding: 15px;
-            background: #fff;
-            overflow-x: auto; /* Scroll horizontal en móviles pequeños */
-            border-bottom: 1px solid #ddd;
-            scrollbar-width: none;
+            flex-direction: column; /* Móvil por defecto */
         }
-        .day-selector::-webkit-scrollbar { display: none; }
 
-        .day-card {
-            flex: 0 0 calc(20% - 8px); /* 5 días exactos */
-            min-width: 70px;
-            padding: 10px 5px;
-            text-align: center;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-            background: #f8f9fa;
+        @media (min-width: 768px) {
+            .content-wrapper {
+                flex-direction: row; /* Escritorio */
+                height: 600px;
+            }
         }
-        .day-card.active {
-            background: var(--azul-marino);
-            color: white;
-            border-color: var(--azul-marino);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .day-card .name { font-size: 0.7rem; text-transform: uppercase; display: block; }
-        .day-card .number { font-size: 1.2rem; font-weight: bold; display: block; }
 
-        /* Contenedor de Horas */
-        .hours-container {
-            padding: 15px;
-            flex-grow: 1;
+        /* Sección Calendario */
+        .calendar-section {
+            flex: 1.2;
+            padding: 20px;
+            border-bottom: 1px solid var(--gris-borde);
         }
-        .section-title {
-            font-size: 1rem;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: var(--azul-claro);
+
+        @media (min-width: 768px) {
+            .calendar-section { border-bottom: none; border-right: 1px solid var(--gris-borde); }
+        }
+
+        .cal-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: var(--azul-marino);
+            text-transform: capitalize;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .day-name {
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #777;
+            padding-bottom: 10px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .day:hover:not(.empty) { background: #e7f1ff; }
+        .day.today { border: 2px solid var(--azul-claro); font-weight: bold; }
+        .day.selected { background: var(--azul-marino) !important; color: white; }
+        .day.full { background: #f8f8f8; color: #ccc; cursor: not-allowed; }
+        .day.full::after {
+            content: "•";
+            color: var(--rojo-ocupado);
+            position: absolute;
+            bottom: 2px;
+        }
+
+        /* Sección Horarios */
+        .slots-section {
+            flex: 1;
+            padding: 20px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slots-container {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 5px;
         }
 
         .slot {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 10px;
-            border: 1px solid #e0e0e0;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--gris-borde);
             cursor: pointer;
-            transition: 0.2s;
-        }
-        
-        /* Estados de franjas */
-        .slot.available { border-left: 6px solid var(--verde-libre); }
-        .slot.available:active { background: #f0fff4; }
-        
-        .slot.occupied {
-            background: #f5f5f5;
-            color: #999;
-            border-left: 6px solid #ccc;
-            cursor: not-allowed;
+            font-size: 14px;
         }
 
-        .slot.selected {
-            background: var(--azul-marino) !important;
-            color: white !important;
-            border-color: var(--azul-marino);
-        }
+        .slot.available { border-left: 5px solid var(--verde-libre); }
+        .slot.selected { background: var(--azul-marino) !important; color: white; }
+        .slot.occupied { background: #eee; color: #999; border-left: 5px solid #bbb; cursor: not-allowed; }
 
-        .slot-time { font-weight: bold; font-size: 1rem; }
-        .slot-status { font-size: 0.8rem; font-weight: 600; }
-
-        /* Footer Fijo */
+        /* Footer */
         .footer {
             padding: 20px;
+            border-top: 1px solid var(--gris-borde);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
             background: white;
-            border-top: 1px solid #ddd;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
+
+        @media (min-width: 600px) {
+            .footer { flex-direction: row; justify-content: space-between; }
+        }
+
         .btn-confirm {
-            width: 100%;
-            padding: 15px;
             background: var(--azul-marino);
             color: white;
             border: none;
+            padding: 12px 30px;
             border-radius: 8px;
-            font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
+            width: 100%;
         }
-        .btn-confirm:disabled { background: #ccc; }
 
-        .summary-text { font-size: 0.85rem; margin-bottom: 10px; text-align: center; }
+        @media (min-width: 600px) { .btn-confirm { width: auto; } }
 
-        /* Desktop Adjustment */
-        @media (min-width: 768px) {
-            body { padding: 40px 0; }
-            .container { 
-                border-radius: 15px; 
-                min-height: auto; 
-                box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            }
-        }
+        .btn-confirm:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="main-container">
     <div class="header">
-        <h1>Reserva de Cancha Sintética</h1>
-        <p>Selecciona día y hora (Próximos 5 días)</p>
+        <h2 id="inst-name">Reserva de Cancha Sintética</h2>
     </div>
 
-    <!-- Selector de Días -->
-    <div class="day-selector" id="day-selector">
-        <!-- Generado por JS -->
-    </div>
-
-    <!-- Lista de Horarios -->
-    <div class="hours-container">
-        <div class="section-title">
-            <span id="display-date">Hoy</span>
-            <small>Hasta las 8:00 PM</small>
+    <div class="content-wrapper">
+        <!-- Calendario Completo -->
+        <div class="calendar-section">
+            <div class="cal-header">
+                <i class="fas fa-chevron-left" style="cursor:pointer"></i>
+                <span id="month-name">Mes Año</span>
+                <i class="fas fa-chevron-right" style="cursor:pointer"></i>
+            </div>
+            <div class="grid" id="calendar-grid">
+                <!-- Se genera con JS -->
+            </div>
         </div>
-        <div id="slots-list">
-            <!-- Generado por JS -->
+
+        <!-- Franjas Horarias -->
+        <div class="slots-section">
+            <p style="font-weight:bold; margin-bottom:15px; color:var(--azul-claro)">
+                Horarios: <span id="selected-date-label">Selecciona un día</span>
+            </p>
+            <div class="slots-container" id="slots-list">
+                <!-- Se genera con JS -->
+            </div>
         </div>
     </div>
 
-    <!-- Resumen y Confirmación -->
     <div class="footer">
-        <div class="summary-text" id="summary-text">
-            Por favor, selecciona una franja horaria.
-        </div>
-        <button class="btn-confirm" id="btn-confirm" disabled>CONFIRMAR RESERVA</button>
+        <div id="summary">Selecciona fecha y hora para continuar.</div>
+        <button class="btn-confirm" id="btn-save" disabled>CONFIRMAR RESERVA</button>
     </div>
 </div>
 
 <script>
-    const daySelector = document.getElementById('day-selector');
-    const slotsList = document.getElementById('slots-list');
-    const displayDate = document.getElementById('display-date');
-    const summaryText = document.getElementById('summary-text');
-    const btnConfirm = document.getElementById('btn-confirm');
-
-    let selectedDate = null;
+    const date = new Date();
+    let selectedDay = date.getDate();
     let selectedSlot = null;
 
-    const daysNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    const monthsNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const dayLabels = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-    // 1. Generar los próximos 5 días
-    function generateDays() {
-        for (let i = 0; i < 5; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() + i);
-            
-            const card = document.createElement('div');
-            card.className = `day-card ${i === 0 ? 'active' : ''}`;
-            if(i === 0) selectedDate = d.toLocaleDateString();
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        document.getElementById('month-name').innerText = `${months[date.getMonth()]} ${date.getFullYear()}`;
+        grid.innerHTML = "";
 
-            card.innerHTML = `
-                <span class="name">${daysNames[d.getDay()]}</span>
-                <span class="number">${d.getDate()}</span>
-            `;
+        // Nombres de los días
+        dayLabels.forEach(d => {
+            const el = document.createElement('div');
+            el.className = "day-name";
+            el.innerText = d;
+            grid.appendChild(el);
+        });
 
-            card.onclick = () => {
-                document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active'));
-                card.classList.add('active');
-                selectedDate = d.toLocaleDateString();
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+        const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        
+        // Ajuste Lunes a Domingo
+        let startPos = firstDay === 0 ? 6 : firstDay - 1;
+
+        for(let i=0; i<startPos; i++) {
+            grid.appendChild(document.createElement('div'));
+        }
+
+        for(let d=1; d<=daysInMonth; d++) {
+            const dayEl = document.createElement('div');
+            dayEl.className = "day";
+            if(d === date.getDate()) dayEl.classList.add('today');
+            if(d === selectedDay) dayEl.classList.add('selected');
+
+            // Simulación de "Día Lleno" (panorama completo)
+            if([5, 12, 25].includes(d)) {
+                dayEl.classList.add('full');
+            }
+
+            dayEl.innerText = d;
+            dayEl.onclick = () => {
+                if(dayEl.classList.contains('full')) return alert("Este día no tiene cupos disponibles.");
+                selectedDay = d;
                 selectedSlot = null;
-                updateView(d);
+                renderCalendar();
+                renderSlots(d);
             };
-            daySelector.appendChild(card);
+            grid.appendChild(dayEl);
         }
     }
 
-    // 2. Generar franjas horarias hasta las 8 PM
-    function updateView(dateObj) {
-        displayDate.innerText = `${daysNames[dateObj.getDay()]} ${dateObj.getDate()} de ${monthsNames[dateObj.getMonth()]}`;
-        slotsList.innerHTML = '';
-        btnConfirm.disabled = true;
-        summaryText.innerText = "Selecciona una franja horaria.";
+    function renderSlots(day) {
+        const list = document.getElementById('slots-list');
+        const label = document.getElementById('selected-date-label');
+        const saveBtn = document.getElementById('btn-save');
+        
+        label.innerText = `${day} de ${months[date.getMonth()]}`;
+        list.innerHTML = "";
+        saveBtn.disabled = true;
 
-        // De 7:00 a 20:00 (8 PM)
-        for (let h = 7; h < 20; h++) {
-            const timeRange = `${h.toString().padStart(2, '0')}:00 - ${(h+1).toString().padStart(2, '0')}:00`;
+        // De 07:00 a 20:00 (8 PM)
+        for(let h=7; h<20; h++) {
+            const time = `${h.toString().padStart(2, '0')}:00 - ${(h+1).toString().padStart(2, '0')}:00`;
+            const isOccupied = Math.random() < 0.3; // 30% ocupados aleatorios
+
+            const el = document.createElement('div');
+            el.className = `slot ${isOccupied ? 'occupied' : 'available'}`;
+            if(selectedSlot === time) el.classList.add('selected');
+
+            el.innerHTML = `<span>${time}</span> <span>${isOccupied ? 'Ocupado' : 'Disponible'}</span>`;
             
-            // Simulación de ocupados aleatorios para el ejemplo
-            const isOccupied = Math.random() < 0.25; 
-
-            const slotDiv = document.createElement('div');
-            slotDiv.className = `slot ${isOccupied ? 'occupied' : 'available'}`;
-            
-            slotDiv.innerHTML = `
-                <span class="slot-time">${timeRange}</span>
-                <span class="slot-status">${isOccupied ? 'OCUPADO <i class="fas fa-lock"></i>' : 'LIBRE <i class="fas fa-check"></i>'}</span>
-            `;
-
-            if (!isOccupied) {
-                slotDiv.onclick = () => {
-                    document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
-                    slotDiv.classList.add('selected');
-                    selectedSlot = timeRange;
-                    summaryText.innerHTML = `Reserva para el <strong>${dateObj.getDate()}/${dateObj.getMonth()+1}</strong> a las <strong>${timeRange}</strong>`;
-                    btnConfirm.disabled = false;
+            if(!isOccupied) {
+                el.onclick = () => {
+                    selectedSlot = time;
+                    renderSlots(day);
+                    document.getElementById('summary').innerHTML = `Reserva: <strong>${day}/${date.getMonth()+1}</strong> a las <strong>${time}</strong>`;
+                    saveBtn.disabled = false;
                 };
             }
-            slotsList.appendChild(slotDiv);
+            list.appendChild(el);
         }
     }
 
-    // Inicializar
-    generateDays();
-    updateView(new Date());
+    // Inicialización
+    renderCalendar();
+    renderSlots(selectedDay);
 </script>
 
 </body>
